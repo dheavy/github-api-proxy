@@ -24,12 +24,30 @@ export const search = async (req: Request, res: Response): Promise<void> => {
       timeZone: currentTimeZone
     });
 
-    res.status(200).json({
-      data: {
-        users: [],
-        repositories: []
-      }
+    // Fetch users and their 5 last updated repos.
+    // Limit items per page, as each resulting users leads to O(n) API calls for repos.
+    // Add repos as a field of the result payload.
+    const { data: users } = await octokit.rest.search.users({
+      q: q.toString(),
+      per_page: 5
     });
+
+    const repositories: Array<any> = [];
+
+    if (users.items?.length) {
+      for (let i = 0; i < users.items.length; i++) {
+        const user = users.items[i];
+        const { login: username } = user;
+        const { data: repos } = await octokit.rest.repos.listForUser({
+          username,
+          per_page: 5,
+          sort: 'updated'
+        });
+        repositories.push(repos);
+      }
+    }
+
+    res.status(200).json({ data: { users, repositories } });
   } catch (err) {
     console.error(err);
 
