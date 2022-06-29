@@ -9,7 +9,15 @@ beforeEach(async () => {
 });
 
 describe('GET /', () => {
-  test.todo('should return 404 status with usage instructions in error message');
+  it('should return 404 status with usage instructions in error message', async () => {
+    const response = await request(server).get('/')
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toMatchObject({
+      data: null,
+      errors: ['This resource does not exist. Please try endpoint "/search?q=<QUERY>"']
+    });
+  });
 });
 
 // describe('GET /search', () => {
