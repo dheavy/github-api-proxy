@@ -6,6 +6,30 @@ import {
   MSG_404_ERROR_INSTRUCTIONS
 } from '../constants';
 
+import { Octokit } from '@octokit/rest';
+jest.mock('@octokit/rest');
+
+(Octokit as any).mockImplementation(() => {
+  return {
+    rest: {
+      search: {
+        users: () => ({
+          data: {
+            items: [{ foo: 'bar' }, { foo: 'baz'}]
+          }
+        })
+      },
+      repos: {
+        listForUser: () => ({
+          data: {
+            items: [{ foo: 'bar' }, { foo: 'baz'}]
+          }
+        })
+      }
+    }
+  };
+});
+
 let server: Express;
 
 beforeEach(async () => {
