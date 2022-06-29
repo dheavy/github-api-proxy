@@ -1,5 +1,10 @@
 import { Response, Request } from 'express';
-import { MSG_QUERY_ERROR_INSTRUCTIONS } from '../constants';
+import {
+  MSG_QUERY_ERROR_INSTRUCTIONS,
+  MSG_ERROR_RATE_GITHUB,
+  MSG_RATE_LIMIT_INSTRUCTIONS,
+  MSG_ERROR_UNKNOWN
+} from '../constants';
 import { Octokit } from '@octokit/rest';
 
 export const search = async (req: Request, res: Response): Promise<void> => {
@@ -51,10 +56,22 @@ export const search = async (req: Request, res: Response): Promise<void> => {
   } catch (err) {
     console.error(err);
 
-    res.status(500);
+    let message: string;
+    let statusCode: number;
+
+    if ((err as any).toString().includes(MSG_ERROR_RATE_GITHUB)) {
+      message = MSG_RATE_LIMIT_INSTRUCTIONS,
+      statusCode = 429
+    } else {
+      message = MSG_ERROR_UNKNOWN,
+      statusCode = 500;
+    }
+
+
+    res.status(statusCode);
     res.send({
       data: null,
-      errors: ['oops!']
+      errors: [message]
     });
   }
 }

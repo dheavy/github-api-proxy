@@ -3,36 +3,18 @@ import { Express } from 'express-serve-static-core';
 import { createServer } from '../server';
 import {
   MSG_QUERY_ERROR_INSTRUCTIONS,
-  MSG_404_ERROR_INSTRUCTIONS
+  MSG_404_ERROR_INSTRUCTIONS,
+  MSG_ERROR_RATE_GITHUB,
+  MSG_RATE_LIMIT_INSTRUCTIONS
 } from '../constants';
 
 import { Octokit } from '@octokit/rest';
 jest.mock('@octokit/rest');
 
-(Octokit as any).mockImplementation(() => {
-  return {
-    rest: {
-      search: {
-        users: () => ({
-          data: {
-            items: [{ foo: 'bar' }, { foo: 'baz'}]
-          }
-        })
-      },
-      repos: {
-        listForUser: () => ({
-          data: [
-            [{ foo: 'bar' }, { foo: 'baz'}]
-          ]
-        })
-      }
-    }
-  };
-});
-
 let server: Express;
 
 beforeEach(async () => {
+  jest.clearAllMocks();
   server = await createServer();
 });
 
@@ -49,6 +31,29 @@ describe('GET /', () => {
 });
 
 describe('GET /search', () => {
+  beforeEach(() => {
+    (Octokit as any).mockImplementation(() => {
+      return {
+        rest: {
+          search: {
+            users: () => ({
+              data: {
+                items: [{ foo: 'bar' }, { foo: 'baz'}]
+              }
+            })
+          },
+          repos: {
+            listForUser: () => ({
+              data: [
+                [{ foo: 'bar' }, { foo: 'baz'}]
+              ]
+            })
+          }
+        }
+      };
+    });
+  });
+
   it('should return 400 and instructions if querystring is missing or malformed', async () => {
     let response = await request(server).get('/search');
     expect(response.statusCode).toBe(400);
@@ -88,5 +93,26 @@ describe('GET /search', () => {
     expect(Array.isArray(body.data.users.items)).toBe(true);
     expect(body.data.repositories).toBeTruthy();
     expect(Array.isArray(body.data.repositories[0])).toBe(true);
+  });
+
+  it.only('should return 429 (Too Many Request) and a specific message when rate limit is exceeded', async () => {
+    (Octokit as any).mockImplementation(() => {
+      return {
+        rest: {
+          search: {
+            users: () => {
+              throw new Error(MSG_ERROR_RATE_GITHUB)
+            }
+          }
+        }
+      };
+    });
+
+    const response = await request(server).get('/search?q=dheavy');
+    expect(response.statusCode).toBe(429);
+    expect(response.body).toMatchObject({
+      data: null,
+      errors: [MSG_RATE_LIMIT_INSTRUCTIONS]
+    })
   });
 });
