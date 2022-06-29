@@ -75,7 +75,7 @@ To significantly raise the rate limit for the API:
 ### Executing program
 
 * `cd` into the project directory
-* Run `docker-compose up -d --build`
+* Run `docker-compose up -d`
 * Start making search request to http://0.0.0.0:8080
 
 ## Authors
