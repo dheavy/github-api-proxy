@@ -5,7 +5,8 @@ import {
   MSG_QUERY_ERROR_INSTRUCTIONS,
   MSG_404_ERROR_INSTRUCTIONS,
   MSG_ERROR_RATE_GITHUB,
-  MSG_RATE_LIMIT_INSTRUCTIONS
+  MSG_RATE_LIMIT_INSTRUCTIONS,
+  MSG_ERROR_UNKNOWN
 } from '../constants';
 
 import { Octokit } from '@octokit/rest';
@@ -95,7 +96,7 @@ describe('GET /search', () => {
     expect(Array.isArray(body.data.repositories[0])).toBe(true);
   });
 
-  it.only('should return 429 (Too Many Request) and a specific message when rate limit is exceeded', async () => {
+  it('should return 429 (Too Many Request) and a specific message when rate limit is exceeded', async () => {
     (Octokit as any).mockImplementation(() => {
       return {
         rest: {
@@ -113,6 +114,27 @@ describe('GET /search', () => {
     expect(response.body).toMatchObject({
       data: null,
       errors: [MSG_RATE_LIMIT_INSTRUCTIONS]
+    })
+  });
+
+  it('should return 500 and a specific error message on other issues', async () => {
+    (Octokit as any).mockImplementation(() => {
+      return {
+        rest: {
+          search: {
+            users: () => {
+              throw new Error()
+            }
+          }
+        }
+      };
+    });
+
+    const response = await request(server).get('/search?q=dheavy');
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toMatchObject({
+      data: null,
+      errors: [MSG_ERROR_UNKNOWN]
     })
   });
 });

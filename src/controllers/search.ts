@@ -67,7 +67,6 @@ export const search = async (req: Request, res: Response): Promise<void> => {
       statusCode = 500;
     }
 
-
     res.status(statusCode);
     res.send({
       data: null,
