@@ -19,6 +19,22 @@ beforeEach(async () => {
   server = await createServer();
 });
 
+type ConsoleError =  {
+  (...data: any[]): void;
+  (message?: any, ...optionalParams: any[]): void;
+}
+
+let consoleError: ConsoleError;
+
+beforeAll(() => {
+  consoleError = console.error;
+  console.error = jest.fn();
+});
+
+afterAll(() => {
+  console.error = consoleError;
+});
+
 describe('GET /', () => {
   it('should return 404 status with usage instructions in error message', async () => {
     const response = await request(server).get('/')
