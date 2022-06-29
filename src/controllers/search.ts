@@ -34,7 +34,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
 
     const repositories: Array<any> = [];
 
-    if (users.items?.length) {
+    if (users?.items?.length) {
       for (let i = 0; i < users.items.length; i++) {
         const user = users.items[i];
         const { login: username } = user;
@@ -47,7 +47,7 @@ export const search = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    res.status(200).json({ data: { users, repositories } });
+    res.status(200).json({ data: { users: users || [], repositories } });
   } catch (err) {
     console.error(err);
 

@@ -21,9 +21,9 @@ jest.mock('@octokit/rest');
       },
       repos: {
         listForUser: () => ({
-          data: {
-            items: [{ foo: 'bar' }, { foo: 'baz'}]
-          }
+          data: [
+            [{ foo: 'bar' }, { foo: 'baz'}]
+          ]
         })
       }
     }
@@ -70,5 +70,23 @@ describe('GET /search', () => {
       data: null,
       errors: [MSG_QUERY_ERROR_INSTRUCTIONS]
     });
+  });
+
+  it('should return 200 when Github API successfully returns data', async () => {
+    const response = await request(server).get('/search?q=dheavy');
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('should return a payload of shape { data: { users: { ..., items: Array }, repositories: Array<Array> } }', async () => {
+    const response = await request(server).get('/search?q=dheavy');
+    expect(response.body).toBeTruthy();
+
+    const body = response.body;
+    expect(body.data).toBeTruthy();
+    expect(body.data.users).toBeTruthy();
+    expect(body.data.users.items).toBeTruthy();
+    expect(Array.isArray(body.data.users.items)).toBe(true);
+    expect(body.data.repositories).toBeTruthy();
+    expect(Array.isArray(body.data.repositories[0])).toBe(true);
   });
 });
