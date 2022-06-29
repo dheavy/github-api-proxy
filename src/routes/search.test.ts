@@ -1,6 +1,10 @@
 import request from 'supertest';
 import { Express } from 'express-serve-static-core';
 import { createServer } from '../server';
+import {
+  MSG_QUERY_ERROR_INSTRUCTIONS,
+  MSG_404_ERROR_INSTRUCTIONS
+} from '../constants';
 
 let server: Express;
 
@@ -15,11 +19,32 @@ describe('GET /', () => {
     expect(response.statusCode).toBe(404);
     expect(response.body).toMatchObject({
       data: null,
-      errors: ['This resource does not exist. Please try endpoint "/search?q=<QUERY>"']
+      errors: [MSG_404_ERROR_INSTRUCTIONS]
     });
   });
 });
 
-// describe('GET /search', () => {
+describe('GET /search', () => {
+  it('should return 400 and instructions if querystring is missing or malformed', async () => {
+    let response = await request(server).get('/search');
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toMatchObject({
+      data: null,
+      errors: [MSG_QUERY_ERROR_INSTRUCTIONS]
+    });
 
-// });
+    response = await request(server).get('/search?q=');
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toMatchObject({
+      data: null,
+      errors: [MSG_QUERY_ERROR_INSTRUCTIONS]
+    });
+
+    response = await request(server).get('/search?foo=bar');
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toMatchObject({
+      data: null,
+      errors: [MSG_QUERY_ERROR_INSTRUCTIONS]
+    });
+  });
+});
